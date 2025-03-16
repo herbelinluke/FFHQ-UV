@@ -1,10 +1,10 @@
 {
-    "Age": 23.0,
-    "Baldness": 0.02,
-    "Beard": 0.0,
-    "Expression": 0.65,
-    "Gender": 0,
-    "Glasses": 0,
-    "Pitch": -5.6,
-    "Yaw": 11.2
+    "Age": {},
+    "Baldness": "",
+    "Beard": 99.32830047607422,
+    "Expression": 94.30339050292969,
+    "Gender": "female",
+    "Glasses": false,
+    "Pitch": 1.838077425956726,
+    "Yaw": 9.665702819824219
 }

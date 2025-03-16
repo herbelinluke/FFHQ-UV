@@ -3,59 +3,78 @@ import time
 import json
 import pickle
 import argparse
-from azure.cognitiveservices.vision.face import FaceClient
-from msrest.authentication import CognitiveServicesCredentials
+#from azure.cognitiveservices.vision.face import FaceClient
+#from msrest.authentication import CognitiveServicesCredentials
+import boto3
+from PIL import Image
 
 # Put your KEY and ENDPOINT here
-KEY = "Your KEY"
-ENDPOINT = "Your ENDPOINT"
-face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
+#KEY = "Your KEY"
+#ENDPOINT = "Your ENDPOINT"
+#face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
 
+face_client = boto3.client('rekognition')
 
 def prase_face(face):
     res = {}
-    attr = face.face_attributes
-    res['Age'] = attr.age
-    res['Gender'] = 1 if str(attr.gender).split('.')[-1] == 'male' else 0
-    res['Expression'] = attr.smile
-    res['Glasses'] = 0 if str(attr.glasses).split('.')[-1] == 'no_glasses' else 1
-    res['Yaw'] = attr.head_pose.yaw
-    res['Pitch'] = attr.head_pose.pitch
-    res['Baldness'] = attr.hair.bald
-    res['Beard'] = attr.facial_hair.beard if attr.facial_hair else 0.0
+    #attr = face.face_attributes
+    res['Age'] = face.get('AgreRange', {})
+    res['Gender'] = face.get('Gender', {}).get('Value', '').lower()
+    res['Expression'] = face.get('Emotions', [{}])[0].get('Confidence', 0)
+    res['Glasses'] = face.get('Eyeglasses', {}).get('Value', False)
+    res['Yaw'] = face.get('Pose', {}).get('Yaw', 0)
+    res['Pitch'] = face.get('Pose', {}).get('Pitch', 0)
+    res['Baldness'] = face.get('Hair', {}).get('Color', {}).get('Value', '').lower()
+    res['Beard'] = face.get('Beard', {}).get('Confidence', 0)
+    #res['Age'] = attr.age
+    #res['Gender'] = 1 if str(attr.gender).split('.')[-1] == 'male' else 0
+    #res['Expression'] = attr.smile
+    #res['Glasses'] = 0 if str(attr.glasses).split('.')[-1] == 'no_glasses' else 1
+   # res['Yaw'] = attr.head_pose.yaw
+   # res['Pitch'] = attr.head_pose.pitch
+   # res['Baldness'] = attr.hair.bald
+   # res['Beard'] = attr.facial_hair.beard if attr.facial_hair else 0.0
     return res
 
 
 def detect_face(image):
 
     # The required face attributes
-    required_attr = [
-        'age',
-        'gender',
-        'headPose',
-        'smile',
-        'facialHair',
-        'glasses',
-        'emotion',
-        'hair',
-        'makeup',
-        'occlusion',
-        'accessories',
-        'blur',
-        'exposure',
-        'noise',
-        'qualityForRecognition',
-    ]
+    #required_attr = [
+    #    'age',
+    #    'gender',
+    #    'headPose',
+    #    'smile',
+    #    'facialHair',
+    #    'glasses',
+    #    'emotion',
+    #    'hair',
+    #    'makeup',
+    #    'occlusion',
+    #    'accessories',
+    #    'blur',
+    #    'exposure',
+    #    'noise',
+    #    'qualityForRecognition',
+    #]
 
     # We use detection model 3 to get better performance
     # recognition model 4 to support quality for recognition attribute.
-    faces = face_client.face.detect_with_stream(image,
-                                                detection_model='detection_01',
-                                                recognition_model='recognition_03',
-                                                return_face_attributes=required_attr)
+    #faces = face_client.face.detect_with_stream(image,
+   #                                             detection_model='detection_01',
+   #                                             recognition_model='recognition_03',
+   #                                             return_face_attributes=required_attr)
+#
+#    return faces
+    with open(image, 'r+b') as image_file:
+        image_bytes = image_file.read()
 
-    return faces
+    response = face_client.detect_faces(
+            Image={'Bytes': image_bytes},
+            Attributes=['ALL']
+    )
 
+    return response.get('FaceDetails', [])
 
 if __name__ == '__main__':
     '''Usage
@@ -93,7 +112,7 @@ if __name__ == '__main__':
         is_drop = False
         while num_retry <= max_retry:
             try:
-                image = open(os.path.join(input_images_dir, fn), 'r+b')
+                image = os.path.join(input_images_dir, fn)
                 ms_api_attr = detect_face(image)
                 if len(ms_api_attr) != 1:
                     is_drop = True  # Only need images only with one face
