@@ -18,14 +18,17 @@ face_client = boto3.client('rekognition')
 def prase_face(face):
     res = {}
     #attr = face.face_attributes
-    res['Age'] = face.get('AgreRange', {})
-    res['Gender'] = face.get('Gender', {}).get('Value', '').lower()
-    res['Expression'] = face.get('Emotions', [{}])[0].get('Confidence', 0)
-    res['Glasses'] = face.get('Eyeglasses', {}).get('Value', False)
-    res['Yaw'] = face.get('Pose', {}).get('Yaw', 0)
-    res['Pitch'] = face.get('Pose', {}).get('Pitch', 0)
-    res['Baldness'] = face.get('Hair', {}).get('Color', {}).get('Value', '').lower()
-    res['Beard'] = face.get('Beard', {}).get('Confidence', 0)
+    age_range = face.get('AgreRange', {})
+    res['Age'] = (age_range.get('Low', 0) + age_range.get('High', 0)) / 2.0 if age_range else 0.0
+    gender_str = face.get('Gender', {}).get('Value', '').lower()
+    res['Gender'] = 1.0 if gender_str == 'male' else 0.0 
+    res['Expression'] = float(face.get('Emotions', [{}])[0].get('Confidence', 0))
+    res['Glasses'] = 1.0 if face.get('Eyeglasses', {}).get('Value', False) else 0.0
+    res['Yaw'] = float(face.get('Pose', {}).get('Yaw', 0))
+    res['Pitch'] = float(face.get('Pose', {}).get('Pitch', 0))
+    hair = face.get('Hair', {})
+    res['Baldness'] = float(hair.get('Bald', 0.0))
+    res['Beard'] = float(face.get('Beard', {}).get('Confidence', 0))
     #res['Age'] = attr.age
     #res['Gender'] = 1 if str(attr.gender).split('.')[-1] == 'male' else 0
     #res['Expression'] = attr.smile
