@@ -18,8 +18,8 @@ face_client = boto3.client('rekognition')
 def prase_face(face):
     res = {}
     #attr = face.face_attributes
-    age_range = face.get('AgreRange', {})
-    res['Age'] = (age_range.get('Low') + age_range.get('High')) / 2.0 if age_range else 0.0
+    age_range = face.get('AgeRange', {})
+    res['Age'] = (age_range.get('Low', 0) + age_range.get('High', 0)) / 2.0 
     gender_str = face.get('Gender', {}).get('Value', '').lower()
     res['Gender'] = 1.0 if gender_str == 'Male' else 0.0 
 
@@ -36,11 +36,11 @@ def prase_face(face):
     else:
         res['Expression'] = 1.0 - (float(smile_conf) / 100.0)
 
-    res['Glasses'] = 1.0 if face.get('Eyeglasses', {}).get('Value', True) else 0.0
+    res['Glasses'] = 1 if face.get('Eyeglasses', {}).get('Value', True) else 0
     res['Yaw'] = float(face.get('Pose', {}).get('Yaw', 0))
     res['Pitch'] = float(face.get('Pose', {}).get('Pitch', 0))
     hair = face.get('Hair', {})
-    res['Baldness'] = float(hair.get('Bald', 0.0))
+    res['Baldness'] = 0 
     res['Beard'] = 1.0 if face.get('Beard', {}).get('Value', True) else 0.0
     #res['Age'] = attr.age
     #res['Gender'] = 1 if str(attr.gender).split('.')[-1] == 'male' else 0

@@ -274,6 +274,9 @@ def set_normal(sf_model, proj_data_dir, save_dir, fn, edit_items):
 
     if 'multi_yaw' in edit_items:
         # turn left, and given right face
+        yaw = np.array([-15])
+        img_out, w_new, attr_new = sf_model.change_attr(attr_name='Yaw', attr_value=yaw, keep_change=False)
+        save_intermediate_image(img_out, "multi_yaw_left15", save_dir, basename)
         yaw = np.array([-30])
         img_out, w_new, attr_new = sf_model.change_attr(attr_name='Yaw', attr_value=yaw, keep_change=False)
         Image.fromarray(img_out, 'RGB').save(os.path.join(save_dir, basename, f'{basename}_right.png'))
@@ -282,6 +285,10 @@ def set_normal(sf_model, proj_data_dir, save_dir, fn, edit_items):
             'attribute': attr_new
         }, os.path.join(save_dir, basename, f'{basename}_right_latent.pt'))
         # turn right, and given left face
+        yaw = np.array([15])
+        img_out, w_new, attr_new = sf_model.change_attr(attr_name='Yaw', attr_value=yaw, keep_change=False)
+        save_intermediate_image(img_out, "multi_yaw_right15", save_dir, basename)
+
         yaw = np.array([30])
         img_out, w_new, attr_new = sf_model.change_attr(attr_name='Yaw', attr_value=yaw, keep_change=False)
         Image.fromarray(img_out, 'RGB').save(os.path.join(save_dir, basename, f'{basename}_left.png'))
