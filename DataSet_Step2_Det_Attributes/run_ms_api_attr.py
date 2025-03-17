@@ -19,16 +19,29 @@ def prase_face(face):
     res = {}
     #attr = face.face_attributes
     age_range = face.get('AgreRange', {})
-    res['Age'] = (age_range.get('Low', 0) + age_range.get('High', 0)) / 2.0 if age_range else 0.0
+    res['Age'] = (age_range.get('Low') + age_range.get('High')) / 2.0 if age_range else 0.0
     gender_str = face.get('Gender', {}).get('Value', '').lower()
-    res['Gender'] = 1.0 if gender_str == 'male' else 0.0 
-    res['Expression'] = float(face.get('Emotions', [{}])[0].get('Confidence', 0))
-    res['Glasses'] = 1.0 if face.get('Eyeglasses', {}).get('Value', False) else 0.0
+    res['Gender'] = 1.0 if gender_str == 'Male' else 0.0 
+
+    # Process Smile attribute from AWS Rekognition
+    smile = face.get('Smile', {})
+    smile_bool = smile.get('Value', False)  # True if smiling, False otherwise
+    smile_conf = smile.get('Confidence', 0.0)  # Confidence level (0 to 100)
+    
+    # Map the values:
+    # If smiling (True), use the confidence as a fraction (e.g., 55 -> 0.55)
+    # If not smiling (False), use the complement (e.g., 55 -> 0.45)
+    if smile_bool:
+        res['Expression'] = float(smile_conf) / 100.0
+    else:
+        res['Expression'] = 1.0 - (float(smile_conf) / 100.0)
+
+    res['Glasses'] = 1.0 if face.get('Eyeglasses', {}).get('Value', True) else 0.0
     res['Yaw'] = float(face.get('Pose', {}).get('Yaw', 0))
     res['Pitch'] = float(face.get('Pose', {}).get('Pitch', 0))
     hair = face.get('Hair', {})
     res['Baldness'] = float(hair.get('Bald', 0.0))
-    res['Beard'] = float(face.get('Beard', {}).get('Confidence', 0))
+    res['Beard'] = 1.0 if face.get('Beard', {}).get('Value', True) else 0.0
     #res['Age'] = attr.age
     #res['Gender'] = 1 if str(attr.gender).split('.')[-1] == 'male' else 0
     #res['Expression'] = attr.smile

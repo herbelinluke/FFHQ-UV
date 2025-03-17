@@ -49,6 +49,19 @@ attribute_idx = {
     },
 }
 
+def save_intermediate_image(img, stage, save_dir, basename):
+    """
+    Save an intermediate image with a stage-specific filename.
+    img: numpy array [H, W, 3]
+    stage: a string label for this editing step (e.g., 'front', 'delight', 'norm_Yaw')
+    save_dir: the root output directory for edits
+    basename: the base filename for the current sample
+    """
+    output_path = os.path.join(save_dir, basename, f'{basename}_{stage}.png')
+    Image.fromarray(img, 'RGB').save(output_path)
+    print(f"Saved intermediate image: {output_path}")
+
+
 
 def replace_w_space(attr_name, current, target):
     w_idxs = attribute_idx[attr_name]['w_idxs']
@@ -217,6 +230,7 @@ def set_normal(sf_model, proj_data_dir, save_dir, fn, edit_items):
 
     # initialize
     img_in, w_in, attr_in = sf_model.set_latents(cur_latent, cur_light, cur_attr)
+    save_intermediate_image(img_in, "initialize", save_dir, basename)
     img_out, w_new, attr_new = img_in, w_in, attr_in
 
     if 'delight' in edit_items:
@@ -233,6 +247,7 @@ def set_normal(sf_model, proj_data_dir, save_dir, fn, edit_items):
         ]])
         # change lighting
         img_out, w_new, attr_new = sf_model.change_light(target_light)
+        save_intermediate_image(img_out, "delight", save_dir, basename)
 
     if 'norm_attr' in edit_items:
         target_attr = {
@@ -247,8 +262,10 @@ def set_normal(sf_model, proj_data_dir, save_dir, fn, edit_items):
             if attr_name == 'Expression':
                 # walk along the exp direction
                 img_out, w_new, attr_new = sf_model.change_exp(exp_alpha=target_attr[attr_name] - 2 * attr[attr_name])
+                save_intermediate_image(img_out, f"exp_{attr_name}", save_dir, basename)
             else:
                 img_out, w_new, attr_new = sf_model.change_attr(attr_name=attr_name, attr_value=target_attr[attr_name])
+                save_intermediate_image(img_out, f"exp_{attr_name}", save_dir, basename)
 
     front_result_img = Image.fromarray(img_out, 'RGB')
     front_result_latent = {'latent': w_new, 'attribute': attr_new}
